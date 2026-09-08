@@ -159,6 +159,130 @@ Noch nicht als Chessdesk-spezifischer Code vorhanden sind insbesondere:
 
 Diese klare Trennung ist wichtig: Chessdesk ist technisch bereits eine belastbare Redaktionsbasis, befindet sich fachlich aber noch am Beginn der Schachspezialisierung.
 
+## Entstehung und Ausgangslage
+
+Chessdesk entstand im September 2026 aus der Überlegung, für eine geplante
+Schachzeitung nicht erneut ein vollständiges Redaktionssystem von Grund auf zu
+entwickeln, sondern eine vorhandene professionelle Open-Source-Plattform um
+schachspezifische Funktionen zu erweitern.
+
+Als technische Basis wurde Superdesk gewählt. Superdesk bringt bereits jene
+Infrastruktur mit, die bei einer eigenständigen Neuentwicklung einen erheblichen
+Teil des Aufwandes verursachen würde: Benutzer- und Rechteverwaltung,
+redaktionelle Workflows, Planung, Medienverwaltung, Suche, Versionierung,
+Monitoring und Publikationsprozesse.
+
+Chessdesk ist daher bewusst kein vollständiger Neubau. Das Projekt verfolgt
+einen anderen Ansatz:
+
+> **Superdesk stellt die Redaktionsmaschine bereit; Chessdesk ergänzt die
+> schachspezifische Fachlogik.**
+
+Am 8. September 2026 wurde dafür der aktuelle `develop`-Branch von Superdesk
+in das Repository `wally2020/chessdesk` übernommen. Ein wesentlich älterer
+Superdesk-Fork im selben GitHub-Account aus dem Jahr 2017 wurde zuvor geprüft,
+aber bewusst nicht als Entwicklungsbasis verwendet.
+
+Damit beginnt Chessdesk auf einer aktuellen Superdesk-Codebasis, während der
+alte Fork ausschließlich historischen Referenzwert besitzt.
+
+
+## Herkunft des Projekts
+
+Die Entwicklung lässt sich in drei Ebenen unterscheiden:
+
+| Ebene | Herkunft | Aufgabe |
+|---|---|---|
+| Superdesk | Sourcefabric / Superdesk Community | allgemeines Redaktionssystem |
+| Chessdesk-Basis | Fork des aktuellen Superdesk-`develop` | technische Ausgangsplattform |
+| Chessdesk-Erweiterungen | eigenes Projekt | Schachlogik, Datenmodelle, Darstellung und Produktidentität |
+
+Diese Unterscheidung soll auch in der weiteren Entwicklung erhalten bleiben.
+
+Änderungen am allgemeinen Redaktionskern sollten möglichst vermieden werden,
+wenn dieselbe Funktion über Konfiguration, Erweiterungen oder klar abgegrenzte
+Module realisiert werden kann. Dadurch soll es möglich bleiben, spätere
+Verbesserungen und Sicherheitsupdates aus dem Superdesk-Upstream zu übernehmen.
+
+
+## Ist-/Soll-Zustand
+
+Der Projektname Chessdesk bezeichnet derzeit sowohl die übernommene technische
+Basis als auch das geplante Endprodukt. Funktional sind diese beiden Ebenen
+noch klar zu unterscheiden.
+
+| Bereich | Ist-Zustand | Ziel |
+|---|---|---|
+| Redaktion | Superdesk-Funktionen vorhanden | schachspezifischer Workflow |
+| Benutzer/Rollen | vorhanden | Rollen für Schachredaktion definieren |
+| Planung | vorhanden | Turniere, Runden und Ereignisse integrieren |
+| Artikel | vorhanden | Schachartikel mit strukturierten Partiedaten |
+| Medien | vorhanden | Bilder, Videos und Schachdokumente |
+| Suche/Archiv | vorhanden | Suche nach Spielern, Turnieren, ECO und Partien |
+| PGN | noch nicht implementiert | Import, Validierung, Speicherung, Export |
+| FEN | noch nicht implementiert | Stellungen speichern und darstellen |
+| Schachbrett | noch nicht implementiert | interaktive Partie- und Stellungsanzeige |
+| Engine | noch nicht implementiert | optionale asynchrone Analyse |
+| Spieler | kein Chessdesk-Modell | strukturierte Spielerprofile |
+| Turniere | kein Chessdesk-Modell | Turniere, Runden, Paarungen und Ergebnisse |
+| Zeitung/Frontend | noch festzulegen | öffentliches Chessdesk-Publikationsangebot |
+
+
+## Eigenanteil von Chessdesk
+
+Der eigentliche Entwicklungsgegenstand von Chessdesk beginnt dort, wo die
+allgemeinen Funktionen von Superdesk enden.
+
+Zum geplanten Eigenanteil gehören insbesondere:
+
+- Schachdatenmodelle für Partien und Stellungen;
+- PGN- und FEN-Verarbeitung;
+- Spieler-, Turnier-, Runden- und Paarungsdaten;
+- Verbindung zwischen redaktionellen Artikeln und Schachdaten;
+- interaktive Brett- und Partieanzeige;
+- schachspezifische Such- und Archivfunktionen;
+- Ergebnis- und Turnierimporte;
+- optional eine kontrollierte Engine-Analyse;
+- Chessdesk-Branding und Benutzeroberfläche;
+- ein auf Schachpublikationen abgestimmtes öffentliches Frontend.
+
+Damit bleibt nachvollziehbar, welche Bestandteile aus dem Upstream-Projekt
+stammen und welche Funktionen im Rahmen von Chessdesk entwickelt wurden.
+
+
+## Systemidee
+
+Die langfristige Architektur lässt sich vereinfacht so darstellen:
+
+```text
+                         CHESSDESK
+
+        ┌───────────────────────────────────┐
+        │           SCHACHREDAKTION          │
+        │                                   │
+        │ Texte · Bilder · Termine · Partien│
+        └─────────────────┬─────────────────┘
+                          │
+                          ▼
+        ┌───────────────────────────────────┐
+        │          SUPERDESK-KERN            │
+        │                                   │
+        │ Workflow · Rechte · Planung       │
+        │ Suche · Medien · Publishing       │
+        └─────────────────┬─────────────────┘
+                          │
+             ┌────────────┴────────────┐
+             ▼                         ▼
+   ┌──────────────────┐      ┌──────────────────┐
+   │  SCHACHMODULE    │      │   PUBLIKATION    │
+   │                  │      │                  │
+   │ PGN / FEN        │      │ Website          │
+   │ Spieler          │      │ Newsletter       │
+   │ Turniere         │      │ Feeds / API      │
+   │ Brett            │      │ weitere Kanäle   │
+   │ Engine optional  │      │                  │
+   └──────────────────┘      └──────────────────┘
+
 ## Empfohlene Ausbaureihenfolge
 
 1. **Produktidentität und Grundkonfiguration:** Name, Logo, Sprache, Zeitzone, Rollen, Desks und redaktionelle Stages.
